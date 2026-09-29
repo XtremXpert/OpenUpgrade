@@ -10,7 +10,7 @@ product = env["product.product"].create(
 )
 order = env["sale.order"].create(
     {
-        "partner_id": env.ref("base.res_partner_1").id,
+        "partner_id": env.ref("base.main_partner").id,
         "client_order_ref": "OpenUpgrade lead time",
         "order_line": [
             (

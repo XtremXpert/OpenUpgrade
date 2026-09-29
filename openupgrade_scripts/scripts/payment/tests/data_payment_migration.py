@@ -50,7 +50,7 @@ env["payment.token"].create(
     {
         "provider_id": test.id,
         "payment_method_id": token_method.id,
-        "partner_id": env.ref("base.res_partner_1").id,
+        "partner_id": env.ref("base.main_partner").id,
         "payment_details": "OpenUpgrade token",
         "provider_ref": "openupgrade",
     }

@@ -37,7 +37,7 @@ Item.create(
 template = env["product.template"].create({"name": "OpenUpgrade product"})
 env["product.supplierinfo"].create(
     {
-        "partner_id": env.ref("base.res_partner_1").id,
+        "partner_id": env.ref("base.main_partner").id,
         "product_tmpl_id": template.id,
         "product_uom_id": env.ref("uom.product_uom_dozen").id,
         "price": 42,

@@ -25,7 +25,7 @@ env["account.journal.group"].create(
 
 # a reviewed and a non reviewed entry
 Move = env["account.move"]
-partner = env.ref("base.res_partner_1")
+partner = env.ref("base.main_partner")
 reviewed = Move.create(
     {
         "move_type": "out_invoice",
