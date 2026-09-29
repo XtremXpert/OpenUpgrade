@@ -221,12 +221,16 @@ def _leaves_count_as(env):
             )
         ],
     )
-    openupgrade.map_values(
+    openupgrade.logged_query(
         env.cr,
-        "count_as",
-        "count_as",
-        [("leave", "absence"), ("other", "working_time")],
-        table="resource_calendar_leaves",
+        """
+        UPDATE resource_calendar_leaves
+        SET count_as = CASE count_as
+            WHEN 'leave' THEN 'absence' WHEN 'other' THEN 'working_time'
+            ELSE count_as
+        END
+        WHERE count_as IN ('leave', 'other')
+        """,
     )
 
 

@@ -178,9 +178,37 @@ def _server_actions_log_note(env):
         )
 
 
+def _channel_members_xmlids(env):
+    """The membership of the admin in the general and admin channels is
+    data of the module now: give the xmlids to the existing records."""
+    partner = env.ref("base.partner_admin", raise_if_not_found=False)
+    if not partner:
+        return
+    for channel_xmlid, member_xmlid in (
+        ("mail.channel_all_employees", "channel_member_general_channel_for_admin"),
+        ("mail.channel_admin", "channel_member_channel_admin_partner_admin"),
+    ):
+        channel = env.ref(channel_xmlid, raise_if_not_found=False)
+        if not channel:
+            continue
+        env.cr.execute(
+            """
+            SELECT id FROM discuss_channel_member
+            WHERE channel_id = %s AND partner_id = %s
+            """,
+            (channel.id, partner.id),
+        )
+        row = env.cr.fetchone()
+        if row and not env.ref(f"mail.{member_xmlid}", raise_if_not_found=False):
+            openupgrade.add_xmlid(
+                env.cr, "mail", member_xmlid, "discuss.channel.member", row[0]
+            )
+
+
 @openupgrade.migrate()
 def migrate(env, version):
     _move_tracking_values_to_mail_tracking(env.cr)
+    _channel_members_xmlids(env)
     _tracking_message_type(env.cr)
     openupgrade.rename_tables(env.cr, _renamed_tables)
     openupgrade.rename_fields(env, _renamed_fields)

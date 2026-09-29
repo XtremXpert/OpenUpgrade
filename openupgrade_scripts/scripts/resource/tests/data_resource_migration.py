@@ -120,11 +120,12 @@ env["resource.calendar.leaves"].create(
         "time_type": "other",
     }
 )
-env["resource.resource"].create(
-    {
-        "name": "OpenUpgrade resource without calendar",
-        "company_id": company.id,
-        "calendar_id": False,
-    }
+resource = env["resource.resource"].create(
+    {"name": "OpenUpgrade resource without calendar", "company_id": company.id}
+)
+# the default is the calendar of the company: a resource without calendar
+# (fully flexible in Odoo 19) is only possible by hand
+env.cr.execute(
+    "UPDATE resource_resource SET calendar_id = NULL WHERE id = %s", (resource.id,)
 )
 env.cr.commit()
