@@ -55,6 +55,13 @@ def _campaign_invoiced_amount_float(cr):
         )
 
 
+def _sale_delay_legacy(cr):
+    """sale_delay is company dependent now (jsonb): keep the values aside,
+    the ORM creates the new column and post-migration fills it"""
+    if openupgrade.column_exists(cr, "product_template", "sale_delay"):
+        openupgrade.rename_columns(cr, {"product_template": [("sale_delay", None)]})
+
+
 @openupgrade.migrate()
 def migrate(env, version):
     # the xmlid is reused by a server action now
@@ -62,6 +69,7 @@ def migrate(env, version):
         env, ["sale.action_accrued_revenue_entry_sale_order_line"]
     )
     openupgrade.rename_fields(env, _renamed_fields)
+    _sale_delay_legacy(env.cr)
     _invoice_policy_required(env.cr)
     _customer_lead_integer(env.cr)
     _campaign_invoiced_amount_float(env.cr)
