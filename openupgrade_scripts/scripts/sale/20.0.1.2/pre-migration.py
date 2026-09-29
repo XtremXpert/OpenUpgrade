@@ -57,6 +57,10 @@ def _campaign_invoiced_amount_float(cr):
 
 @openupgrade.migrate()
 def migrate(env, version):
+    # the xmlid is reused by a server action now
+    openupgrade.delete_records_safely_by_xml_id(
+        env, ["sale.action_accrued_revenue_entry_sale_order_line"]
+    )
     openupgrade.rename_fields(env, _renamed_fields)
     _invoice_policy_required(env.cr)
     _customer_lead_integer(env.cr)
