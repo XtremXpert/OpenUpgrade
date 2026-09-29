@@ -17,8 +17,113 @@ _renamed_fields = [
     ("res.partner.bank", "res_partner_bank", "acc_holder_name", "holder_name"),
 ]
 
-# The website model moved from the website module to base
 _renamed_xmlids = [
+    # states now defined by base, or with a new code
+    ("l10n_in.state_in_la", "base.state_in_la"),
+    ("base.state_in_or", "base.state_in_od"),
+]
+
+# new states of base whose code may already exist in the database (for
+# instance created by a localization or by hand): link them to the record
+_new_states = [
+    "bh_13",
+    "bh_14",
+    "bh_15",
+    "bh_17",
+    "cu_21",
+    "cu_22",
+    "cu_23",
+    "cu_24",
+    "cu_25",
+    "cu_26",
+    "cu_27",
+    "cu_28",
+    "cu_29",
+    "cu_30",
+    "cu_31",
+    "cu_32",
+    "cu_33",
+    "cu_34",
+    "cu_35",
+    "cu_40",
+    "kw_ah",
+    "kw_fa",
+    "kw_ha",
+    "kw_ja",
+    "kw_ku",
+    "kw_mu",
+    "lb_ak",
+    "lb_as",
+    "lb_ba",
+    "lb_bh",
+    "lb_bi",
+    "lb_ja",
+    "lb_jl",
+    "lb_na",
+    "mm_01",
+    "mm_02",
+    "mm_03",
+    "mm_04",
+    "mm_05",
+    "mm_06",
+    "mm_07",
+    "mm_08",
+    "mm_09",
+    "mm_10",
+    "mm_11",
+    "mm_12",
+    "mm_13",
+    "mm_14",
+    "mm_15",
+    "om_bj",
+    "om_bs",
+    "om_bu",
+    "om_da",
+    "om_ma",
+    "om_mu",
+    "om_sj",
+    "om_ss",
+    "om_wu",
+    "om_za",
+    "om_zu",
+    "pa_1",
+    "pa_2",
+    "pa_3",
+    "pa_4",
+    "pa_5",
+    "pa_6",
+    "pa_7",
+    "pa_8",
+    "pa_9",
+    "pa_10",
+    "pa_11",
+    "pa_12",
+    "pa_13",
+    "qa_da",
+    "qa_kh",
+    "qa_ms",
+    "qa_ra",
+    "qa_sh",
+    "qa_us",
+    "qa_wa",
+    "qa_za",
+    "sa_001",
+    "sa_002",
+    "sa_003",
+    "sa_004",
+    "sa_005",
+    "sa_006",
+    "sa_007",
+    "sa_008",
+    "sa_009",
+    "sa_010",
+    "sa_011",
+    "sa_012",
+    "sa_014",
+]
+
+# The website model moved from the website module to base
+_website_xmlids = [
     ("website.default_website", "base.default_website"),
     (
         "website.constraint_website_domain_unique",
@@ -76,7 +181,32 @@ def _website_moved_to_base(cr):
     if not openupgrade.table_exists(cr, "website"):
         return
     openupgrade.update_module_moved_models(cr, "website", "website", "base")
-    openupgrade.rename_xmlids(cr, _renamed_xmlids)
+    openupgrade.rename_xmlids(cr, _website_xmlids)
+
+
+def _link_new_country_states(cr):
+    """Give the xmlid of the new states of base to the existing records with
+    the same country and code, so that base does not create duplicates."""
+    for suffix in _new_states:
+        country_code, state_code = suffix.split("_", 1)
+        cr.execute(
+            """
+            SELECT state.id
+            FROM res_country_state state
+            JOIN res_country country ON country.id = state.country_id
+            WHERE country.code = %s AND state.code = %s
+                AND NOT EXISTS (
+                    SELECT 1 FROM ir_model_data
+                    WHERE module = 'base' AND name = %s
+                )
+            """,
+            (country_code.upper(), state_code.upper(), f"state_{suffix}"),
+        )
+        row = cr.fetchone()
+        if row:
+            openupgrade.add_xmlid(
+                cr, "base", f"state_{suffix}", "res.country.state", row[0]
+            )
 
 
 def _fill_partner_bank_from_res_bank(cr):
@@ -214,6 +344,8 @@ def migrate(env, version):
         env.cr, merged_modules.items(), merge_modules=True, environment_namespec=True
     )
     openupgrade.clean_transient_models(env.cr)
+    openupgrade.rename_xmlids(env.cr, _renamed_xmlids)
+    _link_new_country_states(env.cr)
     _keep_legacy_access_tables(env.cr)
     _website_moved_to_base(env.cr)
     openupgrade.rename_fields(env, _renamed_fields)
