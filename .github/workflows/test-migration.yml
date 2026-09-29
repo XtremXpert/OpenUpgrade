@@ -94,7 +94,8 @@ jobs:
           sed -i -E "s/(gevent==)21\.8\.0( ; sys_platform != 'win32' and python_version == '3.10')/\122.10.2\2/;s/(greenlet==)1.1.2( ; sys_platform != 'win32' and python_version == '3.10')/\12.0.2\2/" odoo/requirements.txt
           pip install -q -r odoo/requirements.txt
           pip install -r ./openupgrade/requirements.txt
-          pip install -U git+https://github.com/oca/openupgradelib
+          # TODO back to oca/openupgradelib once OCA/openupgradelib#468 is merged
+          pip install -U git+https://github.com/XtremXpert/openupgradelib@fix-odoo-20
           # the previous version is only used to load the test data,
           # but its requirements differ (e.g. babel is gone from Odoo 20)
           python -m venv env-old
