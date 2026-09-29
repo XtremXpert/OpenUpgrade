@@ -15,6 +15,7 @@ def _res_partner_bank_computes(env):
     banks.filtered(lambda bank: not bank.country_id)._compute_country_id()
     banks.filtered(lambda bank: not bank.clearing_label_id)._compute_clearing_label_id()
     banks.filtered(lambda bank: not bank.holder_name)._compute_account_holder_name()
+    env.flush_all()
     # the ORM could not set the constraint while the column was empty
     openupgrade.logged_query(
         env.cr,
