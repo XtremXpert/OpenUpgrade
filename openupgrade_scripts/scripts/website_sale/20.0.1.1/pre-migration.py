@@ -3,6 +3,12 @@
 
 from openupgradelib import openupgrade
 
+# record moved from website_payment
+_moved_xmlids = [
+    ("website_payment.s_donation_000_scss", "website_sale.s_donation_000_scss"),
+]
+
+
 _renamed_fields = [
     ("website", "website", "send_abandoned_cart_email", "send_abandoned_cart_followup"),
     ("website", "website", "contact_us_button_url", "contact_us_link_url"),
@@ -103,6 +109,7 @@ def _product_documents(cr):
 
 @openupgrade.migrate()
 def migrate(env, version):
+    openupgrade.rename_xmlids(env.cr, _moved_xmlids)
     openupgrade.rename_fields(env, _renamed_fields)
     _website_prevent_sale(env)
     _website_required_fields(env.cr)

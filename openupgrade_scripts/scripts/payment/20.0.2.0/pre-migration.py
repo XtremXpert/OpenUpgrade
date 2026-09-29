@@ -11,6 +11,12 @@ import logging
 
 from openupgradelib import openupgrade
 
+# record moved to payment_demo (when still present)
+_moved_xmlids = [
+    ("payment.payment_method_unknown", "payment_demo.payment_method_unknown"),
+]
+
+
 _logger = logging.getLogger(__name__)
 
 _method_columns = (
@@ -223,6 +229,7 @@ def _method_xmlids(cr, copies):
 
 @openupgrade.migrate()
 def migrate(env, version):
+    openupgrade.rename_xmlids(env.cr, _moved_xmlids)
     _provider_state(env)
     copies = _split_methods_by_provider(env)
     _method_xmlids(env.cr, copies)

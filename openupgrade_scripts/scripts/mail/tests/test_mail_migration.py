@@ -42,9 +42,10 @@ class TestMailMigration(TransactionCase):
         self.assertIn(
             self.env.ref("base.partner_admin"), message.bookmarked_partner_ids
         )
-        self.assertEqual(
+        # installed after mail, so still 'to install' when the tests of mail run
+        self.assertIn(
             self.env["ir.module.module"].search([("name", "=", "mail_tracking")]).state,
-            "installed",
+            ("to install", "installed"),
         )
         tracking = self.env["mail.tracking.value"].search(
             [("mail_message_id", "=", message.id)]

@@ -5,6 +5,19 @@ import logging
 
 from openupgradelib import openupgrade
 
+# records moved from stock_account to account
+_moved_xmlids = [
+    (
+        "stock_account.action_report_stock_valuation",
+        "account.action_report_stock_valuation",
+    ),
+    (
+        "stock_account.ir_cron_post_stock_valuation",
+        "account.ir_cron_post_stock_valuation",
+    ),
+]
+
+
 _logger = logging.getLogger(__name__)
 
 
@@ -169,6 +182,7 @@ def _account_groups(cr):
 
 @openupgrade.migrate()
 def migrate(env, version):
+    openupgrade.rename_xmlids(env.cr, _moved_xmlids)
     _payment_state(env.cr)
     _move_review_state(env)
     _journal_groups(env)

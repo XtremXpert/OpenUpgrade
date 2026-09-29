@@ -5,18 +5,20 @@ from odoo.addons.openupgrade_framework import openupgrade_test
 
 @openupgrade_test
 class TestProductMigration(TransactionCase):
-    def _item(self, name):
-        return self.env["product.pricelist.item"].search([("name", "=", name)])
+    def _items(self):
+        """The name of a rule is computed now: identify them by their base"""
+        pricelist = self.env["product.pricelist"].search(
+            [("name", "=", "OpenUpgrade pricelist")]
+        )
+        return pricelist.item_ids.sorted("id")
 
     def test_pricelist_items(self):
-        percentage = self._item("OpenUpgrade percentage rule")
+        percentage, discount, markup = self._items()
         self.assertEqual(percentage.compute_price, "discount")
         self.assertEqual(percentage.price_discount, 12.5)
-        discount = self._item("OpenUpgrade formula discount rule")
         self.assertEqual(discount.compute_price, "discount")
         self.assertEqual(discount.price_discount, 10)
         self.assertEqual(discount.price_surcharge, 2)
-        markup = self._item("OpenUpgrade formula markup rule")
         self.assertEqual(markup.compute_price, "markup")
         self.assertEqual(markup.price_markup, 20)
 

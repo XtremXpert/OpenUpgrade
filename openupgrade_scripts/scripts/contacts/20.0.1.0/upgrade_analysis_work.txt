@@ -6,4 +6,4 @@ DEL ir.ui.menu: contacts.menu_action_res_bank_form
 DEL ir.ui.menu: contacts.menu_config_bank_accounts
 NEW ir.ui.view: contacts.res_partner_view_hierarchy
 
-# NOTHING TO DO: menus and views only
+# DONE: the city menu moved from base_address_extended (xmlid renamed in pre-migration); views only
