@@ -95,6 +95,10 @@ jobs:
           pip install -q -r odoo/requirements.txt
           pip install -r ./openupgrade/requirements.txt
           pip install -U git+https://github.com/oca/openupgradelib
+          # the previous version is only used to load the test data,
+          # but its requirements differ (e.g. babel is gone from Odoo 20)
+          python -m venv env-old
+          env-old/bin/pip install -q -r odoo-old/requirements.txt
           # this is for v18 l10n_eg_edi_eta which crashes without it
           pip install asn1crypto
           # required by v18
@@ -106,7 +110,7 @@ jobs:
         run: |
           if test -n "$(ls openupgrade/openupgrade_scripts/scripts/*/tests/data*.py 2> /dev/null)"; then
              for snippet in openupgrade/openupgrade_scripts/scripts/*/tests/data*.py; do
-               odoo-old/odoo-bin shell -d $DB < $snippet
+               env-old/bin/python odoo-old/odoo-bin shell -d $DB < $snippet
              done
           fi
       - name: OpenUpgrade test
