@@ -101,6 +101,7 @@ jobs:
           env-old/bin/pip install -q gevent==22.10.2 greenlet==2.0.2
           sed -i -E '/^gevent\>/d; /^greenlet\>/d' odoo-old/requirements.txt
           env-old/bin/pip install -q -r odoo-old/requirements.txt
+          env-old/bin/pip install -q asn1crypto "google-auth<2.48.0" phonenumbers
           # this is for v18 l10n_eg_edi_eta which crashes without it
           pip install asn1crypto
           # required by v18
