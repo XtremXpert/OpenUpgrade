@@ -129,7 +129,7 @@ def _split_methods_by_provider(env):
             )
             copies[(method_id, provider_id)] = cr.fetchone()[0]
     # brands point to the copy of their primary method for the same provider
-    for (method_id, provider_id), copy_id in copies.items():
+    for (_method_id, provider_id), copy_id in copies.items():
         cr.execute(
             "SELECT primary_payment_method_id FROM payment_method WHERE id = %s",
             (copy_id,),
@@ -137,7 +137,8 @@ def _split_methods_by_provider(env):
         primary_id = cr.fetchone()[0]
         if primary_id and (primary_id, provider_id) in copies:
             cr.execute(
-                "UPDATE payment_method SET primary_payment_method_id = %s WHERE id = %s",
+                "UPDATE payment_method SET primary_payment_method_id = %s "
+                "WHERE id = %s",
                 (copies[(primary_id, provider_id)], copy_id),
             )
     # transactions and tokens use the copy of their provider
@@ -186,7 +187,10 @@ def _method_xmlids(cr, copies):
     cr.execute("SELECT id, code FROM payment_provider")
     provider_codes = dict(cr.fetchall())
     cr.execute(
-        "SELECT name FROM ir_module_module WHERE state IN ('installed', 'to upgrade', 'to install')"
+        """
+        SELECT name FROM ir_module_module
+        WHERE state IN ('installed', 'to upgrade', 'to install')
+        """
     )
     modules = {row[0] for row in cr.fetchall()}
     handled = set()
