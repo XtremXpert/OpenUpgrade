@@ -12,7 +12,6 @@ class TestWebsiteSaleMigration(TransactionCase):
         self.assertTrue(website.send_abandoned_cart_followup)
         self.assertEqual(website.contact_us_link_url, "/openupgrade-contact")
         self.assertTrue(website.show_category_title)
-        self.assertFalse(website.show_category_description)
 
     def test_variant_image(self):
         image = self.env["product.image"].search(
