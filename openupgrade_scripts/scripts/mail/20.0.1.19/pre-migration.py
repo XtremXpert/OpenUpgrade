@@ -178,37 +178,46 @@ def _server_actions_log_note(env):
         )
 
 
-def _channel_members_xmlids(env):
+def _xmlid_res_id(cr, module, name):
+    cr.execute(
+        "SELECT res_id FROM ir_model_data WHERE module = %s AND name = %s",
+        (module, name),
+    )
+    row = cr.fetchone()
+    return row and row[0]
+
+
+def _channel_members_xmlids(cr):
     """The membership of the admin in the general and admin channels is
     data of the module now: give the xmlids to the existing records."""
-    partner = env.ref("base.partner_admin", raise_if_not_found=False)
-    if not partner:
+    partner_id = _xmlid_res_id(cr, "base", "partner_admin")
+    if not partner_id:
         return
-    for channel_xmlid, member_xmlid in (
-        ("mail.channel_all_employees", "channel_member_general_channel_for_admin"),
-        ("mail.channel_admin", "channel_member_channel_admin_partner_admin"),
+    for channel_name, member_name in (
+        ("channel_all_employees", "channel_member_general_channel_for_admin"),
+        ("channel_admin", "channel_member_channel_admin_partner_admin"),
     ):
-        channel = env.ref(channel_xmlid, raise_if_not_found=False)
-        if not channel:
+        channel_id = _xmlid_res_id(cr, "mail", channel_name)
+        if not channel_id or _xmlid_res_id(cr, "mail", member_name):
             continue
-        env.cr.execute(
+        cr.execute(
             """
             SELECT id FROM discuss_channel_member
             WHERE channel_id = %s AND partner_id = %s
             """,
-            (channel.id, partner.id),
+            (channel_id, partner_id),
         )
-        row = env.cr.fetchone()
-        if row and not env.ref(f"mail.{member_xmlid}", raise_if_not_found=False):
+        row = cr.fetchone()
+        if row:
             openupgrade.add_xmlid(
-                env.cr, "mail", member_xmlid, "discuss.channel.member", row[0]
+                cr, "mail", member_name, "discuss.channel.member", row[0]
             )
 
 
 @openupgrade.migrate()
 def migrate(env, version):
     _move_tracking_values_to_mail_tracking(env.cr)
-    _channel_members_xmlids(env)
+    _channel_members_xmlids(env.cr)
     _tracking_message_type(env.cr)
     openupgrade.rename_tables(env.cr, _renamed_tables)
     openupgrade.rename_fields(env, _renamed_fields)

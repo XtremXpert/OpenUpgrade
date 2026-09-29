@@ -74,6 +74,54 @@ def _calendar_type(env):
     )
 
 
+def _resources_without_calendar(cr):
+    """
+    calendar_id is required now: the ORM would give the calendar of the
+    company to the resources without calendar, which worked flexible hours
+    in Odoo 19. Give them an 'undefined' calendar of their company instead.
+    """
+    cr.execute(
+        """
+        SELECT DISTINCT company_id FROM resource_resource
+        WHERE calendar_id IS NULL
+        """
+    )
+    for (company_id,) in cr.fetchall():
+        cr.execute(
+            """
+            SELECT id FROM resource_calendar
+            WHERE calendar_type = 'undefined' AND company_id IS NOT DISTINCT FROM %s
+            ORDER BY id LIMIT 1
+            """,
+            (company_id,),
+        )
+        row = cr.fetchone()
+        if row:
+            calendar_id = row[0]
+        else:
+            cr.execute(
+                """
+                INSERT INTO resource_calendar
+                    (name, calendar_type, company_id, active, hours_per_day,
+                     hours_per_week, full_time_required_hours, schedule_type, tz,
+                     create_uid, create_date, write_uid, write_date)
+                VALUES (%s, 'undefined', %s, TRUE, 8, 40, 40, 'flexible', 'UTC',
+                        1, now(), 1, now())
+                RETURNING id
+                """,
+                (openupgrade.get_legacy_name("flexible"), company_id),
+            )
+            calendar_id = cr.fetchone()[0]
+        openupgrade.logged_query(
+            cr,
+            """
+            UPDATE resource_resource SET calendar_id = %s
+            WHERE calendar_id IS NULL AND company_id IS NOT DISTINCT FROM %s
+            """,
+            (calendar_id, company_id),
+        )
+
+
 def _attendances(env):
     cr = env.cr
     openupgrade.add_fields(
@@ -237,5 +285,6 @@ def _leaves_count_as(env):
 @openupgrade.migrate()
 def migrate(env, version):
     _calendar_type(env)
+    _resources_without_calendar(env.cr)
     _attendances(env)
     _leaves_count_as(env)
