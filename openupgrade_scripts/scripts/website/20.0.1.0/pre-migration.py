@@ -32,7 +32,7 @@ def _view_visibility(cr):
         WHERE visibility IS NULL OR visibility = ''
         """,
     )
-    if openupgrade.table_exists(cr, "website_controller_page"):
+    if openupgrade.column_exists(cr, "website_controller_page", "visibility"):
         openupgrade.logged_query(
             cr,
             """
