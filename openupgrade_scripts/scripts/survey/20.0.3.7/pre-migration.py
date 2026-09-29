@@ -17,10 +17,11 @@ _layouts = [
 
 @openupgrade.migrate()
 def migrate(env, version):
-    openupgrade.map_values(
-        env.cr,
-        "certification_report_layout",
-        "certification_report_layout",
-        _layouts,
-        table="survey_survey",
-    )
+    for old, new in _layouts:
+        openupgrade.logged_query(
+            env.cr,
+            "UPDATE survey_survey SET certification_report_layout = %s "
+            "WHERE certification_report_layout = %s",
+            (new, old),
+            skip_no_result=True,
+        )
