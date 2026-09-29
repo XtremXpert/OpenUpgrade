@@ -227,9 +227,27 @@ def _method_xmlids(cr, copies):
     )
 
 
+def _obsolete_redirect_forms(cr):
+    """The redirect form of payment_custom is gone: the providers still
+    referencing it would block its removal"""
+    openupgrade.logged_query(
+        cr,
+        """
+        UPDATE payment_provider SET redirect_form_view_id = NULL
+        WHERE redirect_form_view_id IN (
+            SELECT res_id FROM ir_model_data
+            WHERE model = 'ir.ui.view' AND module = 'payment_custom'
+                AND name = 'redirect_form'
+        )
+        """,
+        skip_no_result=True,
+    )
+
+
 @openupgrade.migrate()
 def migrate(env, version):
     openupgrade.rename_xmlids(env.cr, _moved_xmlids)
+    _obsolete_redirect_forms(env.cr)
     _provider_state(env)
     copies = _split_methods_by_provider(env)
     _method_xmlids(env.cr, copies)
