@@ -144,6 +144,11 @@ class Converter:
         self.created = _legacy("ir_access_created")
         if not openupgrade.table_exists(self.cr, self.created):
             self.cr.execute(f"CREATE TABLE {self.created} (id integer, origin text)")
+        self.handled = _legacy("ir_rule_handled")
+        if not openupgrade.table_exists(self.cr, self.handled):
+            self.cr.execute(f"CREATE TABLE {self.handled} (id integer)")
+        self.cr.execute(f"SELECT id FROM {self.handled}")
+        self.handled_rules = {row[0] for row in self.cr.fetchall()}
 
     def is_custom(self, model, res_id):
         module = self.xmlids.get((model, res_id), (None, None))[0]
@@ -159,14 +164,21 @@ class Converter:
     def folded_domain(self, model_id, group_id, operation):
         """OR of the group rules applying to every user of the group."""
         closure = self.closure(group_id)
-        return _combine(
-            "|",
-            [
-                rule["domain"]
-                for rule in self.group_rules.get(model_id, [])
-                if operation in rule["operations"] and rule["groups"] & closure
-            ],
-        )
+        rules = [
+            rule
+            for rule in self.group_rules.get(model_id, [])
+            if operation in rule["operations"] and rule["groups"] & closure
+        ]
+        for rule in rules:
+            self.mark_handled(rule)
+        return _combine("|", [rule["domain"] for rule in rules])
+
+    def mark_handled(self, rule):
+        if rule["id"] not in self.handled_rules:
+            self.handled_rules.add(rule["id"])
+            self.cr.execute(
+                f"INSERT INTO {self.handled} (id) VALUES (%s)", (rule["id"],)
+            )
 
     def create(self, values, origin):
         """Create the ir.access with SQL: the model may belong to a module
@@ -277,6 +289,8 @@ class Converter:
                 continue
             if not rule["active"] or not rule["domain"]:
                 continue
+            if rule["id"] in self.handled_rules:
+                continue
             applied = False
             for permission in permissions:
                 if permission.model_id.id != rule["model_id"]:
@@ -285,6 +299,8 @@ class Converter:
                     continue
                 by_permission.setdefault(permission, []).append(rule)
                 applied = True
+            if applied:
+                self.mark_handled(rule)
             if final and not applied:
                 self.warnings.append(
                     f"{origin}: no standard permission of model "
